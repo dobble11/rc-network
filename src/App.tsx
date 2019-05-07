@@ -49,11 +49,14 @@ class App extends React.Component<any> {
       .force('charge', d3.forceManyBody())
       .force('collision', d3.forceCollide(100))
       .force('center', d3.forceCenter(width / 2, height / 2));
-    // 获取 svg
-    const svg = d3.select('svg').call(this.zoom());
+    // 创建顶级 g 作为容器，接收 transform
+    const container = d3
+      .select('svg')
+      .call(this.zoom())
+      .append('g');
 
     // 定义节点背景图
-    svg
+    container
       .append('defs')
       .selectAll('pattern')
       .data(nodes)
@@ -66,7 +69,7 @@ class App extends React.Component<any> {
       .attr('width', d => d.radius * 2)
       .attr('height', d => d.radius * 2);
     // 定义连接线箭头
-    svg
+    container
       .append('defs')
       .selectAll('marker')
       .data(links)
@@ -81,10 +84,10 @@ class App extends React.Component<any> {
       .attr('orient', 'auto')
       .attr('stroke-width', 4)
       .append('path')
-      .attr('d', 'M0,-5 L10,0 L0,5')
+      .attr('d', 'M2,0 L0,-3 L9,0 L0,3 M2,0 L0,-3')
       .attr('fill', d => d.color);
 
-    const link = svg
+    const link = container
       .append('g')
       .selectAll('path')
       .data(links)
@@ -93,7 +96,7 @@ class App extends React.Component<any> {
       .attr('class', 'link')
       .attr('stroke', d => d.color)
       .attr('marker-end', d => `url(#marker-${d.index})`);
-    const node = svg
+    const node = container
       .append('g')
       .selectAll('g')
       .data(nodes)
@@ -101,7 +104,7 @@ class App extends React.Component<any> {
       .attr('class', 'node');
 
     // 添加连接线文本
-    svg
+    container
       .append('g')
       .selectAll('text')
       .data(links)
@@ -160,7 +163,9 @@ class App extends React.Component<any> {
 
   zoom(): any {
     return d3.zoom().on('zoom', function() {
-      // d3.select(this).style('background', '#ccc');
+      d3.select(this)
+        .select('g')
+        .attr('transform', d3.event.transform.toString());
     });
   }
 
