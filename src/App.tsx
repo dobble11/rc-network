@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import _ from 'lodash';
 import React from 'react';
 import './App.css';
 import jpg from './lxt.jpg';
@@ -20,31 +21,36 @@ const height = 600;
 const nodes: Node[] = [
   { id: 'Alice', radius: 40, src: jpg },
   { id: 'Bob', radius: 35, src: jpg },
-  { id: 'Carol', radius: 35, src: jpg }
+  { id: 'Carol', radius: 35, src: jpg },
+  ..._.range(1000).map(i => ({ id: i.toString(), radius: 35, src: jpg }))
 ];
 const links: Link[] = [
   { source: 'Alice', target: 'Bob', label: '弟弟', color: '#1890ff' },
+  { source: 'Alice', target: 'Carol', label: '同伙', color: '#1890ff' },
   { source: 'Bob', target: 'Alice', label: '同行', color: 'orange' },
-  { source: 'Alice', target: 'Carol', label: '弟弟', color: '#1890ff' }
+  ..._.range(500).map(i => ({
+    source: i.toString(),
+    target: _.random(999, false).toString(),
+    label: `test`,
+    color: 'orange'
+  }))
 ];
 
-class App extends React.Component<any, any> {
+class App extends React.Component<any> {
   componentDidMount() {
     // 创建力学仿真容器
     const simulation = d3
       .forceSimulation(nodes)
       .force(
         'link',
-        d3
-          .forceLink(links)
-          .id((d: any) => d.id)
-          .distance(200)
+        d3.forceLink(links).id((d: any) => d.id)
+        // .distance(200)
       )
       .force('charge', d3.forceManyBody())
-      .force('collision', d3.forceCollide(50))
+      .force('collision', d3.forceCollide(100))
       .force('center', d3.forceCenter(width / 2, height / 2));
     // 获取 svg
-    const svg = d3.select('svg').call(this.zoome());
+    const svg = d3.select('svg').call(this.zoom());
 
     // 定义节点背景图
     svg
@@ -68,21 +74,21 @@ class App extends React.Component<any, any> {
       .attr('id', d => `marker-${d.index}`)
       .attr('viewBox', '0 -5 10 10')
       .attr('markerUnits', 'userSpaceOnUse')
-      .attr('refX', (d: any) => d.target.radius + 5)
-      .attr('refY', 0)
+      .attr('refX', (d: any) => d.target.radius + 3)
+      .attr('refY', -3)
       .attr('markerWidth', 12)
       .attr('markerHeight', 12)
       .attr('orient', 'auto')
-      .attr('stroke-width', 2)
+      .attr('stroke-width', 4)
       .append('path')
       .attr('d', 'M2,0 L0,-3 L9,0 L0,3 M2,0 L0,-3')
       .attr('fill', d => d.color);
 
     const link = svg
       .append('g')
-      .selectAll('line')
+      .selectAll('path')
       .data(links)
-      .join('line')
+      .join('path')
       .attr('id', d => `link-${d.index}`)
       .attr('class', 'link')
       .attr('stroke', d => d.color)
@@ -94,32 +100,33 @@ class App extends React.Component<any, any> {
       .join('g')
       .attr('class', 'node');
 
+    // 添加连接线文本
     svg
       .append('g')
       .selectAll('text')
       .data(links)
       .join('text')
       .attr('class', 'link-text')
+      .attr('dy', -5)
       .append('textPath')
       .attr('href', d => `#link-${d.index}`)
+      .attr('startOffset', '50%')
       .text(d => d.label);
+    // 添加节点
     node
       .append('circle')
       .attr('class', 'node-circle')
       .attr('r', d => d.radius)
       .attr('fill', d => `url(#image-${d.index})`)
       .call(this.drag(simulation));
+    // 添加节点文本
     node
       .append('text')
       .attr('class', 'node-text')
       .text(d => d.id);
 
     simulation.on('tick', () => {
-      link
-        .attr('x1', (d: any) => d.source.x)
-        .attr('y1', (d: any) => d.source.y)
-        .attr('x2', (d: any) => d.target.x)
-        .attr('y2', (d: any) => d.target.y);
+      link.attr('d', this.genLinkPath);
       node
         .selectAll('*')
         .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
@@ -151,10 +158,21 @@ class App extends React.Component<any, any> {
       .on('end', dragended);
   }
 
-  zoome(): any {
+  zoom(): any {
     return d3.zoom().on('zoom', function() {
       // d3.select(this).style('background', '#ccc');
     });
+  }
+
+  // 生成关系连线路径
+  genLinkPath(link: any) {
+    const sx = link.source.x;
+    const tx = link.target.x;
+    const sy = link.source.y;
+    const ty = link.target.y;
+    const dr = Math.sqrt(Math.pow(tx - sx, 2) + Math.pow(ty - sy, 2));
+
+    return `M${sx} ${sy} A ${dr} ${dr} 0 0 1 ${tx} ${ty}`;
   }
 
   render() {
