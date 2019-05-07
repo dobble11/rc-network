@@ -81,7 +81,7 @@ class App extends React.Component<any> {
       .attr('orient', 'auto')
       .attr('stroke-width', 4)
       .append('path')
-      .attr('d', 'M2,0 L0,-3 L9,0 L0,3 M2,0 L0,-3')
+      .attr('d', 'M0,-5 L10,0 L0,5')
       .attr('fill', d => d.color);
 
     const link = svg
