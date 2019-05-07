@@ -20,4 +20,10 @@ svg {
   text-anchor: middle;
   dominant-baseline: middle;
   fill: white;
+  pointer-events: none;
+}
+
+.link {
+  stroke-width: 2px;
+  stroke-opacity: 0.6;
 }
