@@ -12,7 +12,7 @@ svg {
 
 .node-circle {
   stroke: white;
-  stroke-width: 2px;
+  stroke-width: 1.5px;
 }
 
 .node-text {
@@ -23,10 +23,26 @@ svg {
   pointer-events: none;
 }
 
+#marker-relation > path {
+  fill: #1890ff;
+}
+
+#marker-walk > path {
+  fill: orange;
+}
+
 .link {
-  stroke-width: 2px;
+  stroke-width: 1.5px;
   stroke-opacity: 0.6;
   fill: none;
+}
+
+.link-relation {
+  stroke: #1890ff;
+}
+
+.link-walk {
+  stroke: orange;
 }
 
 .link-text {

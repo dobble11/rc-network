@@ -5,47 +5,41 @@ import './App.css';
 import jpg from './lxt.jpg';
 
 interface Node extends d3.SimulationNodeDatum {
-  id: string;
+  id: number;
+  label: string;
   radius: number;
   src: string;
 }
 interface Link extends d3.SimulationLinkDatum<d3.SimulationNodeDatum> {
-  source: string;
-  target: string;
+  id: number;
+  source: number;
+  target: number;
   label: string;
-  color: string;
+  type: 'relation' | 'walk';
 }
 
 const width = 1000;
 const height = 600;
-const nodes: Node[] = [
-  { id: 'Alice', radius: 40, src: jpg },
-  { id: 'Bob', radius: 35, src: jpg },
-  { id: 'Carol', radius: 35, src: jpg },
-  ..._.range(1000).map(i => ({ id: i.toString(), radius: 35, src: jpg }))
-];
-const links: Link[] = [
-  { source: 'Alice', target: 'Bob', label: '弟弟', color: '#1890ff' },
-  { source: 'Alice', target: 'Carol', label: '同伙', color: '#1890ff' },
-  { source: 'Bob', target: 'Alice', label: '同行', color: 'orange' },
-  ..._.range(500).map(i => ({
-    source: i.toString(),
-    target: _.random(999, false).toString(),
-    label: `test`,
-    color: 'orange'
-  }))
-];
+const nodes: Node[] = _.range(500).map(i => ({
+  id: i,
+  label: i.toString(),
+  radius: 15,
+  src: jpg
+}));
+const links: Link[] = _.range(200).map(i => ({
+  id: i,
+  source: i,
+  target: _.random(499, false),
+  label: '同行',
+  type: _.random() > 0.5 ? 'relation' : 'walk'
+}));
 
 class App extends React.Component<any> {
   componentDidMount() {
     // 创建力学仿真容器
     const simulation = d3
       .forceSimulation(nodes)
-      .force(
-        'link',
-        d3.forceLink(links).id((d: any) => d.id)
-        // .distance(200)
-      )
+      .force('link', d3.forceLink(links).id((d: any) => d.id))
       .force('charge', d3.forceManyBody())
       .force('collision', d3.forceCollide(100))
       .force('center', d3.forceCenter(width / 2, height / 2));
@@ -61,7 +55,7 @@ class App extends React.Component<any> {
       .selectAll('pattern')
       .data(nodes)
       .join('pattern')
-      .attr('id', d => `image-${d.index}`)
+      .attr('id', d => `image-${d.id}`)
       .attr('width', d => d.radius * 2)
       .attr('height', d => d.radius * 2)
       .append('image')
@@ -72,30 +66,26 @@ class App extends React.Component<any> {
     container
       .append('defs')
       .selectAll('marker')
-      .data(links)
+      .data(['relation', 'walk'])
       .join('marker')
-      .attr('id', d => `marker-${d.index}`)
+      .attr('id', d => `marker-${d}`)
       .attr('viewBox', '0 -5 10 10')
-      .attr('markerUnits', 'userSpaceOnUse')
-      .attr('refX', (d: any) => d.target.radius + 3)
-      .attr('refY', -3)
-      .attr('markerWidth', 12)
-      .attr('markerHeight', 12)
+      .attr('refX', 27)
+      .attr('refY', -1)
+      .attr('markerWidth', 6)
+      .attr('markerHeight', 6)
       .attr('orient', 'auto')
-      .attr('stroke-width', 4)
       .append('path')
-      .attr('d', 'M2,0 L0,-3 L9,0 L0,3 M2,0 L0,-3')
-      .attr('fill', d => d.color);
+      .attr('d', 'M0,-5L10,0L0,5');
 
     const link = container
       .append('g')
       .selectAll('path')
       .data(links)
       .join('path')
-      .attr('id', d => `link-${d.index}`)
-      .attr('class', 'link')
-      .attr('stroke', d => d.color)
-      .attr('marker-end', d => `url(#marker-${d.index})`);
+      .attr('id', d => `link-${d.id}`)
+      .attr('class', d => `link link-${d.type}`)
+      .attr('marker-end', d => `url(#marker-${d.type})`);
     const node = container
       .append('g')
       .selectAll('g')
@@ -110,9 +100,9 @@ class App extends React.Component<any> {
       .data(links)
       .join('text')
       .attr('class', 'link-text')
-      .attr('dy', -5)
+      .attr('dy', '-0.5em')
       .append('textPath')
-      .attr('href', d => `#link-${d.index}`)
+      .attr('href', d => `#link-${d.id}`)
       .attr('startOffset', '50%')
       .text(d => d.label);
     // 添加节点
@@ -120,13 +110,14 @@ class App extends React.Component<any> {
       .append('circle')
       .attr('class', 'node-circle')
       .attr('r', d => d.radius)
-      .attr('fill', d => `url(#image-${d.index})`)
+      .attr('fill', d => `url(#image-${d.id})`)
       .call(this.drag(simulation));
+
     // 添加节点文本
     node
       .append('text')
       .attr('class', 'node-text')
-      .text(d => d.id);
+      .text(d => d.label);
 
     simulation.on('tick', () => {
       link.attr('d', this.genLinkPath);
